@@ -1,0 +1,192 @@
+---
+title: "Who's that"
+subtitle: "Mandarin reflexives"
+author: "Ying Zhang"
+institute: "Rutgers University"
+date: "2025/04/05"
+output:
+  xaringan::moon_reader:
+    css: ["rutgers", "rutgers-fonts"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+# 1. Introduction
+
+Reflexive pronouns (hence 'reflexives') are used for reference. Their referent is determined by their antecedents. For example, the reflexive *herself* in (1) refers to *Mary* since *Mary* is the antecedent of *herself*.
+
+(1) Mary saw herself in the mirror.
+
+There are two reflexives-- *ziji* and *taziji* in Mandarin which behave differently regarding their ability to take a non-local binder.
+
+(2) John1 said Bill2 liked ziji(1/2).
+
+(3) John1 said Bill2 liked taziji(*1/2).
+---
+# 2. Research questions
+- Is *taziji* more likely to take a non-local binder in the elided structure?
+
+- Does *ziji* behave the same in both the full structure and the elided structure regarding the choice of binder?
+---
+# 3. Materials and the design
+
+There are 20 testing sentences for each participant. Each item includes two questions: Q1 and Q2. 
+
+**Item**: 
+
+A: Who did John say that Bill liked?
+
+B: John said that Bill liked reflexive (full)./ Reflexive (elided).
+
+**Q1**: Who do you think the reflexive refers to? John; Bill
+
+**Q2** Can the reflexive refer to Bill/John?
+
+**Dependent variable**: the choice of the binder, the local binder/Bill (1) and the non-local binder/John (0)
+
+**Independent variables**: sentence type (full/elided) and survey/ reflexive type (taziji/ziji)
+---
+# 4. Data 
+
+```{r}
+#| label: setup
+#| echo: false
+#| message: false
+#| warning: false
+#| out-height: "75%"
+#| out-width: "100%"
+#| fig-asp: 0.4
+
+library("tidyverse")
+library("tidyr")
+library("ds4ling")
+library("here")
+library("lme4")
+library("broom")
+
+dat_raw_1 <- read_csv(here("data", "raw", "survey_data.csv"))
+
+head(dat_raw_1)
+```
+---
+# 4. Tidy the data?
+```{r}
+#| label: tidy
+#| echo: false
+#| message: false
+#| warning: false
+#| out-height: "75%"
+#| out-width: "100%"
+#| fig-asp: 0.4
+
+dat_raw <- read_csv(here("data", "raw", "survey_data_2.csv"))
+
+dat_raw$q1_time <- dat_raw$q1_1+
+  +   dat_raw$q1_2+
+  +   dat_raw$q1_3+
+  +   dat_raw$q1_4+
+  +   dat_raw$q1_5+
+  +   dat_raw$q1_6+
+  +   dat_raw$q1_7+
+  +   dat_raw$q1_8+
+  +   dat_raw$q1_9+
+  +   dat_raw$q1_10+
+  +   dat_raw$q1_11+
+  +   dat_raw$q1_12+
+  +   dat_raw$q1_13+
+  +   dat_raw$q1_14+
+  +   dat_raw$q1_15+
+  +   dat_raw$q1_16+
+  +   dat_raw$q1_17+
+  +   dat_raw$q1_18+
+  +   dat_raw$q1_19+
+  +   dat_raw$q1_20
+
+dat_raw$q1_per <- dat_raw$q1_time / 20
+dat_raw$q1_logit <- log((dat_raw$q1_per)/(1-dat_raw$q1_per))
+
+dat_raw |> 
+ relocate(q1_per, q1_logit, .after = sentence)
+```
+---
+# 5. The plot 
+```{r}
+#| label: plot
+#| echo: false
+#| message: false
+#| warning: false
+#| out-height: "80%"
+#| out-width: "100%"
+#| fig-asp: 0.7
+dat_raw |> 
+  ggplot() +
+  aes(x = sentence, y = q1_logit, fill = survey) +
+  geom_boxplot()
+```
+---
+# 6. The model
+```{r}
+#| label: mod
+#| echo: true
+#| message: false
+#| warning: false
+
+mod1<- lm(q1_logit ~ sentence * survey, data = dat_raw)
+summary(mod1)
+
+```
+---
+# 6. The model
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+mod1_summary <- tidy(mod1)
+knitr::kable(mod1_summary)
+```
+---
+# 7. The issue
+q2_logit is ***infinite***!
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+  
+dat_raw$q2_time <- dat_raw$q2_1+
+  dat_raw$q2_2+
+  dat_raw$q2_3+
+  dat_raw$q2_4+
+  dat_raw$q2_5+
+  dat_raw$q2_6+
+  dat_raw$q2_7+
+  dat_raw$q2_8+
+  dat_raw$q2_9+
+  dat_raw$q2_10+
+  dat_raw$q2_11+
+  dat_raw$q2_12+ 
+  dat_raw$q2_13+
+  dat_raw$q2_14+
+  dat_raw$q2_15+
+  dat_raw$q2_16+
+  dat_raw$q2_17+
+  dat_raw$q2_18+
+  dat_raw$q2_19+
+  dat_raw$q2_20
+
+dat_raw$q2_per <- dat_raw$q2_time / 20
+dat_raw$q2_logit <- log((dat_raw$q2_per)/(1-dat_raw$q2_per))
+
+dat_raw |> 
+  relocate(q1_per, q1_logit, q2_per, q2_logit, .after = sentence)
+```
+---
+# 8. Change the model?
+- Since the dependent variables are binary responses, the logistic regression can be a better choice.
+
+- Given that a single participant gives 40 data point, a mixed-effects model should be used. THe fixed effects are the sentence type and the survey type. The random effect is the subject/participant. 
+
+- The ***issue***: for each item, there is the corresponding number of response. However, I just haven't figured out what to do there are 40 items.
