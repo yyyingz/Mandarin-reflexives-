@@ -1,47 +1,13 @@
 ---
-title             : "The title"
-shorttitle        : "Title"
+title             : "Who's that? The binding of Mandarin reflexives" 
+shorttitle        : "Mandarin reflexives"
 
 author: 
-  - name          : "First Author"
-    affiliation   : "1"
-    corresponding : yes    # Define only one corresponding author
-    address       : "Postal address"
-    email         : "my@email.com"
-    role: # Contributorship roles (e.g., CRediT, https://credit.niso.org/)
-      - "Conceptualization"
-      - "Writing - Original Draft Preparation"
-      - "Writing - Review & Editing"
-  - name          : "Ernst-August Doelle"
-    affiliation   : "1,2"
-    role:
-      - "Writing - Review & Editing"
-      - "Supervision"
+  - name          : "Ying Zhang"
 
 affiliation:
   - id            : "1"
-    institution   : "Wilhelm-Wundt-University"
-  - id            : "2"
-    institution   : "Konstanz Business School"
-
-authornote: |
-  Add complete departmental affiliations for each author here. Each new line herein must be indented, like this line.
-
-  Enter author note here.
-
-abstract: |
-  One or two sentences providing a **basic introduction** to the field,  comprehensible to a scientist in any discipline.
-  Two to three sentences of **more detailed background**, comprehensible  to scientists in related disciplines.
-  One sentence clearly stating the **general problem** being addressed by  this particular study.
-  One sentence summarizing the main result (with the words "**here we show**" or their equivalent).
-  Two or three sentences explaining what the **main result** reveals in direct comparison to what was thought to be the case previously, or how the  main result adds to previous knowledge.
-  One or two sentences to put the results into a more **general context**.
-  Two or three sentences to provide a **broader perspective**, readily comprehensible to a scientist in any discipline.
-  
-  <!-- https://tinyurl.com/ybremelq -->
-  
-keywords          : "keywords"
-wordcount         : "X"
+    institution   : "Rutgers University"
 
 bibliography      : "r-references.bib"
 
@@ -61,6 +27,15 @@ output            : papaja::apa6_pdf
 ```{r setup, include = FALSE}
 library("papaja")
 r_refs("r-references.bib")
+library("tidyverse")
+library("tidyr")
+library("dplyr")
+library("scales")
+library("ds4ling")
+library("here")
+library("lme4")
+library("broom.mixed")
+library("knitr")
 ```
 
 ```{r analysis-preferences}
@@ -69,25 +44,182 @@ set.seed(42)
 knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
 ```
 
+# 1. Introduction
+Various factors can affect the binding of reflexives. This study investigates how syntactic structure influences binding by examining the choice of binders for Mandarin reflexives in both full and elided structures. There are two reflexives-- *ziji* and *taziji* in Mandarin which behave differently regarding their ability to take a non-local binder. *ziji* can take both a local and a non-local binder, whereas *taziji* is more restricted to a local binder. 
 
+(1) John1 said Bill2 liked ziji(1/2).
 
-# Methods
+(2) John1 said Bill2 liked taziji(*1/2).
+
+# 2. Methods
+The experiment examines whether the choice of binders is influenced by syntactic structure. Two tasks are conducted: a free choice task, which explores the range of potential binders, and a binary choice task, which tests whether a specific binder can be selected.
+
 We report how we determined our sample size, all data exclusions (if any), all manipulations, and all measures in the study. <!-- 21-word solution (Simmons, Nelson & Simonsohn, 2012; retrieved from http://ssrn.com/abstract=2160588) -->
 
-## Participants
+## 2.1 Participants
+Native Mandarin speakers are recruited over the internet.
 
-## Material
+## 2.2 Materials and design
+There are 80 target items. Each target item consists of a dialogue, with the answer being the critical sentence containing the tested reflexive. Each item includes two questions: Q1 (a free choice question) and Q2 (a binary choice question). The critical sentences follow a 2 × 2 design, crossing sentence type (full/elided) with reflexive type (ziji/taziji). An example of a target item is provided below.
 
-## Procedure
+(3) 
 
-## Data analysis
+A: Who did John say that Bill liked?
+
+B: John said that Bill liked **reflexive** (full)./ **Reflexive** (elided).
+
+**Q1**: Who do you think the reflexive refers to? John; Bill
+
+**Q2** Can the reflexive refer to Bill/John?
+
+The 80 target items are distributed across four surveys, each defined by a combination of reflexive type and sentence structure. Within each survey, 20 target items are mixed with 20 fillers in a pseudo-randomized order.
+
+## 2.3 Procedure
+The experiment is conducted on Qualtrics. On each trial, participants first see a dialogue. Once they proceed, the dialogue disappears and is replaced by Q1. Participants select one of the two referents. After completing Q1, they are presented with Q2, in which they indicate whether a specific referent can be the binder of the reflexive by choosing “yes” or “no.”
+
+## 2.4 Predictions
+*Taziji* shows a higher rate of non-local binders in elided structures than in full structures. In contrast, *ziji* exhibits a similar distribution of local and non-local binders across both structures.
+
+## 2.5 Data analysis
 We used `r cite_r("r-references.bib")` for all our analyses.
 
+A mixed-effects logistic regression model is used to analyze the binary choice of binders, implemented using the lme4 package in R. The dependent variable is *response* (0 = non- local binder /1 = local binder). The fixed effects are *survey* (ziji/taziji) and *sentence*, with random intercepts for each subject.
 
-# Results
+The significance of the main effects and possible interaction (reflexive type × structure type) is assessed with hierarchical partitioning of the variance via nested model comparison. 
 
-# Discussion
+# 3. Results
 
+```{r}
+dat_raw <- read_csv(here("data", "raw", "survey_data.csv"))
+```
+The code chunk below shows how the data is tidied, followed by a preview of the resulting dataset. 
+```{r}
+#| echo: TRUE
+#| message: false
+#| warning: false
+
+dat1 <- dat_raw |> 
+  pivot_longer(
+    cols      = starts_with("item_"),
+    names_to  = c("item", "blocking", "question"), 
+    names_prefix = "item_",
+    names_sep   = "[.]",
+    values_to = "response"
+  ) |> 
+  mutate(
+    item = as.integer(item),
+    blocking = blocking
+  )
+
+  knitr::kable(head(dat1), digits = 3 )
+```
+Below is the code chunk for the plot. The plot shows the proportion of local and non-local binder responses. For *taziji*, the proportion of non-local binders is higher in the elided structure than in the full structure. In contrast, *ziji* exhibits a similar distribution of binders across both structure types.
+```{r}
+#| echo: TRUE
+#| message: false
+#| warning: false
+
+dat1 |> 
+  ggplot() +
+  aes(x = sentence, fill = factor(response, labels = c("Non-local","Local")))+
+  geom_bar(position = "fill") +
+  facet_wrap(~ survey) +
+  scale_y_continuous(labels = percent_format())+
+  labs(
+    x     = "Sentence Structure",
+    y     = "Proportion of Binders",
+    fill  = "Response",
+    title = "Proportion of binders by Sentence & Survey"
+  ) 
+```
+First, the data is analyzed with a null model.
+```{r}
+#| echo: TRUE
+#| message: false
+#| warning: false
+
+mod_0 <- glmer(
+  formula = response ~ 1 + (1 | id),
+  family = binomial(link = "logit"),
+  data = dat1
+  )
+
+mod_summary_0 <- tidy(mod_0, 
+                      effects = "fixed",
+                      conf.int = TRUE
+                      )
+
+  knitr::kable(mod_summary_0, digits = 3 )
+```
+As shown in the table above, there is a significant baseline preference for local binders (p < .001), consistent with theoretical predictions. However, this result does not provide information about the non-local binding.
+
+Next, an inclusive model is used to analyze the data. A comparison with the null model shows that the inclusive model is a better fit, as indicated by its lower AIC value (3774.3).
+
+```{r}
+#| echo: TRUE
+#| message: false
+#| warning: false
+
+mod_1 <- glmer(
+  formula = response ~ sentence*survey + (1 | id),
+  family = binomial(link = "logit"),
+  data = dat1
+  )
+
+anova_tidy_1 <- tidy(anova(mod_1, mod_0, 
+                         test="Chisq")
+                   )
+knitr::kable(anova_tidy_1, digits = 3)
+```
+
+The log-odds of a local-binder response is 0.5537 when both sentencefull and surveyziji are coded as 0, indicating that approximately 63% of responses are local binders in the elided–taziji condition. The significant main effect of sentence (p < .001) suggests that local binders are more likely in full structures than in elided ones. The significant sentence × survey interaction shows that full structures substantially increase local-binder choice for *taziji*, whereas *ziji*’s binder preferences remain largely unchanged across structure types.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+mod_summary_1 <- tidy(mod_1,
+                      effects = "fixed",
+                      conf.int = TRUE
+                      ) 
+knitr::kable(mod_summary_1, digits = 3 )
+
+plogis(0.5537)
+```
+A restricted model is compared with the inclusive model. The AIC values show that the inclusive model yields a better fit. The interaction effect is significant.
+```{r}
+#| echo: TRUE
+#| message: false
+#| warning: false
+mod_2 <- glmer(
+  formula = response ~ sentence + survey + (1 | id),
+  family = binomial(link = "logit"),
+  data = dat1
+  )
+anova_tidy_2 <- tidy(anova(mod_2, mod_1, 
+                         test="Chisq")
+                   )
+knitr::kable(anova_tidy_2, digits = 3)
+```
+Significant main effects of sentence type (beta = 0.668, p < .001) and reflexive type (beta = –0.540, p < .001) on participants’ binder choices are observed.
+
+The log-odds of a local binder response is 0.839 when both sentencefull and surveyziji are 0. This corresponds to a predicted probability of approximately 70% for a local binder response in elided sentences within the *taziji* survey.
+
+Holding surveyziji at 0, a one unit increase in sentencefull is associated with a 0.668 increase in log-odds. When holding sentencefull at 0, one unit increase in surveyziji is associated with a 0.540 decrease in log-odds. This means that the odds of a local binder response decrease by about 42% in the *ziji* survey compared to the *taziji* survey.
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+mod_summary_2 <- tidy(mod_2,
+                      effects = "fixed",
+                      conf.int = TRUE
+                      ) 
+
+knitr::kable(mod_summary_2, digits = 3 )
+```
+# 4. Discussion
+The inclusive model is selected for the analysis. Sentence type and reflexive type both show significant main effects on binder choice. While the result primarily reflects the choice of local binders, it also indirectly indicates a difference in non-local binder selection. Specifically, non-local binders are more likely to be chosen in the elided structure within the *taziji* survey, supporting the prediction.
 
 \newpage
 

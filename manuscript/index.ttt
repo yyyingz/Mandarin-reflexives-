@@ -1,0 +1,15 @@
+\begin{table*}[hbt]
+\ifnextchar[{\eatarg}{}
+
+
+\caption{(\#tab:tab:anova_tidy_1)Comparison of the null and inclusive models}
+\centering
+\begin{tabular}[t]{lrrrrrrrr}
+\toprule
+term & npar & AIC & BIC & logLik & minus2logL & statistic & df & p.value\\
+\midrule
+mod\_0 & 2 & 3848.687 & 3860.828 & -1922.343 & 3844.687 & NA & NA & NA\\
+mod\_1 & 5 & 3757.618 & 3787.972 & -1873.809 & 3747.618 & 97.069 & 3 & 0\\
+\bottomrule
+\end{tabular}
+\end{table*}
